@@ -9,12 +9,12 @@ The performance result compare with TFT_eSPI like this
 |-----------|-------------------------|---------|
 |Screen fill|                   147461|  2930664|
 |Text|                          171875|   165039|
-|Lines|			               **1378906**|	  784179|
+|Lines|			               **1378906**|**784179**|
 |Horiz/Vert Lines|	             20508|	  238281|
 |Rectangles (outline)|		       23438|	  200195|
 |Rectangles (filled)|		        405276|	 8009767|
 |Circles (filled)|		          263672|	  666016|
-|Circles (outline)|		      **625000**|	  283203|
+|Circles (outline)|		      **625000**|**283203**|
 |Triangles (outline)|	          404297|	  259765|
 |Triangles (filled)|	          364258|	 2613278|
 |Rounded rects (outline)|	      257813|	  276367|
@@ -33,12 +33,12 @@ result become
 |-----------|-------------------------|---------|
 |Screen fill|             			147461|	 2930664|
 |Text|    			                171875|	  165039|
-|Lines|				              **791015**|	  784179|
+|Lines|				              **791015**|**784179**|
 |Horiz/Vert Lines|		           20508|	  238281|
 |Rectangles (outline)|		       23438|	  200195|
 |Rectangles (filled)|		        401372|	 8009767|
 |Circles (filled)|		          263672|	  666016|
-|Circles (outline)|		      **326172**|	  283203|
+|Circles (outline)|		      **326172**|**283203**|
 |Triangles (outline)|		        239258|	  259765|
 |Triangles (filled)|		        365232|	 2613278|
 |Rounded rects (outline)|     	256836|	  276367|
