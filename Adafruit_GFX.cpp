@@ -329,20 +329,57 @@ void Adafruit_GFX::fillScreen(uint16_t color) {
 /**************************************************************************/
 void Adafruit_GFX::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
                             uint16_t color) {
-  // Update in subclasses if desired!
-  if (x0 == x1) {
-    if (y0 > y1)
-      _swap_int16_t(y0, y1);
-    drawFastVLine(x0, y0, y1 - y0 + 1, color);
-  } else if (y0 == y1) {
-    if (x0 > x1)
-      _swap_int16_t(x0, x1);
-    drawFastHLine(x0, y0, x1 - x0 + 1, color);
-  } else {
-    startWrite();
-    writeLine(x0, y0, x1, y1, color);
-    endWrite();
+  bool steep = abs(y1 - y0) > abs(x1 - x0);
+  if (steep) {
+    _swap_int16_t(x0, y0);
+    _swap_int16_t(x1, y1);
   }
+
+  if (x0 > x1) {
+    _swap_int16_t(x0, x1);
+    _swap_int16_t(y0, y1);
+  }
+
+  int32_t dx = x1 - x0, dy = abs(y1 - y0);;
+
+  int32_t err = dx >> 1, ystep = -1, xs = x0, dlen = 0;
+
+  if (y0 < y1) ystep = 1;
+	
+	startWrite();
+  // Split into steep and not steep for FastH/V separation
+  if (steep) {
+    for (; x0 <= x1; x0++) {
+      dlen++;
+      err -= dy;
+      if (err < 0) {
+        if (dlen == 1) drawPixel(y0, xs, color);
+        else drawFastVLine(y0, xs, dlen, color);
+        dlen = 0;
+        y0 += ystep; xs = x0 + 1;
+        err += dx;
+      }
+    }
+    if (dlen) drawFastVLine(y0, xs, dlen, color);
+  }
+  else
+  {
+    for (; x0 <= x1; x0++) {
+      dlen++;
+      err -= dy;
+      if (err < 0) {
+        if (dlen == 1) drawPixel(xs, y0, color);
+        else drawFastHLine(xs, y0, dlen, color);
+        dlen = 0;
+        y0 += ystep; xs = x0 + 1;
+        err += dx;
+      }
+    }
+    if (dlen) drawFastHLine(xs, y0, dlen, color);
+  }
+
+  endWrite();
+}
 }
 
 /**************************************************************************/
@@ -359,37 +396,58 @@ void Adafruit_GFX::drawCircle(int16_t x0, int16_t y0, int16_t r,
 #if defined(ESP8266)
   yield();
 #endif
-  int16_t f = 1 - r;
-  int16_t ddF_x = 1;
-  int16_t ddF_y = -2 * r;
-  int16_t x = 0;
-  int16_t y = r;
+  int32_t f     = 1 - r;
+  int32_t ddF_y = -2 * r;
+  int32_t ddF_x = 1;
+  int32_t xs    = -1;
+  int32_t xe    = 0;
+  int32_t len   = 0;
 
-  startWrite();
-  writePixel(x0, y0 + r, color);
-  writePixel(x0, y0 - r, color);
-  writePixel(x0 + r, y0, color);
-  writePixel(x0 - r, y0, color);
+  bool first = true;
+	startWrite();
+    do {
+      while (f < 0) {
+        ++xe;
+        f += (ddF_x += 2);
+      }
+      f += (ddF_y += 2);
 
-  while (x < y) {
-    if (f >= 0) {
-      y--;
-      ddF_y += 2;
-      f += ddF_y;
-    }
-    x++;
-    ddF_x += 2;
-    f += ddF_x;
+      if (xe-xs>1) {
+        if (first) {
+          len = 2*(xe - xs)-1;
+          drawFastHLine(x0 - xe, y0 + r, len, color);
+          drawFastHLine(x0 - xe, y0 - r, len, color);
+          drawFastVLine(x0 + r, y0 - xe, len, color);
+          drawFastVLine(x0 - r, y0 - xe, len, color);
+          first = false;
+        }
+        else {
+          len = xe - xs++;
+          drawFastHLine(x0 - xe, y0 + r, len, color);
+          drawFastHLine(x0 - xe, y0 - r, len, color);
+          drawFastHLine(x0 + xs, y0 - r, len, color);
+          drawFastHLine(x0 + xs, y0 + r, len, color);
 
-    writePixel(x0 + x, y0 + y, color);
-    writePixel(x0 - x, y0 + y, color);
-    writePixel(x0 + x, y0 - y, color);
-    writePixel(x0 - x, y0 - y, color);
-    writePixel(x0 + y, y0 + x, color);
-    writePixel(x0 - y, y0 + x, color);
-    writePixel(x0 + y, y0 - x, color);
-    writePixel(x0 - y, y0 - x, color);
-  }
+          drawFastVLine(x0 + r, y0 + xs, len, color);
+          drawFastVLine(x0 + r, y0 - xe, len, color);
+          drawFastVLine(x0 - r, y0 - xe, len, color);
+          drawFastVLine(x0 - r, y0 + xs, len, color);
+        }
+      }
+      else {
+        ++xs;
+        drawPixel(x0 - xe, y0 + r, color);
+        drawPixel(x0 - xe, y0 - r, color);
+        drawPixel(x0 + xs, y0 - r, color);
+        drawPixel(x0 + xs, y0 + r, color);
+
+        drawPixel(x0 + r, y0 + xs, color);
+        drawPixel(x0 + r, y0 - xe, color);
+        drawPixel(x0 - r, y0 - xe, color);
+        drawPixel(x0 - r, y0 + xs, color);
+      }
+      xs = xe;
+    } while (xe < --r);
   endWrite();
 }
 
