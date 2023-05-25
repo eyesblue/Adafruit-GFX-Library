@@ -22,7 +22,7 @@ The performance result compare with TFT_eSPI like this
 
 
 
-I got a conclusion from the result is Adafruit GFX bettre then the TFT_eSPI,
+I got a conclusion from the result was Adafruit GFX bettre then the TFT_eSPI,
 th TFT_eSPI is bad performance while fill color to a shape, I was move the 
 drawLine and Circles (outline) code from TFT_eSPI to Adafruit GFX, the
 result become
